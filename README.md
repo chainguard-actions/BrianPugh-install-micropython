@@ -8,6 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
+| v2.0.0 | [`v2.0.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v2.0.0) | [`65552c0`](https://github.com/BrianPugh/install-micropython/commit/65552c008530b8ee67e628603bb7d8e882e49788) |
 | v2.2.0 | [`v2.2.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v2.2.0) | [`0eab913`](https://github.com/BrianPugh/install-micropython/commit/0eab913c3f99009bd3115f080dac3c4fdcc88260) |
 
 ## Privacy
