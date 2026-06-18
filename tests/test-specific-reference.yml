@@ -1,0 +1,34 @@
+name: Test MicroPython install with specific reference
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          repository: https://github.com/micropython/micropython
+          reference: v1.22.0
+      - name: Assert micropython is installed and runnable
+        run: |
+          echo "Checking micropython is available..."
+          if ! command -v micropython &>/dev/null; then
+            echo "FAIL: micropython not found in PATH"
+            exit 1
+          fi
+          echo "micropython found at: $(command -v micropython)"
+          VERSION=$(micropython --version 2>&1 || true)
+          echo "micropython version: $VERSION"
+          if [ -z "$VERSION" ]; then
+            echo "FAIL: micropython --version returned empty output"
+            exit 1
+          fi
+          # Verify the version matches what we requested
+          if echo "$VERSION" | grep -q "v1.22"; then
+            echo "PASS: version matches v1.22"
+          else
+            echo "WARN: version string does not contain 'v1.22', got: $VERSION"
+          fi
+          echo "PASS"

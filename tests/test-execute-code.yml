@@ -1,0 +1,34 @@
+name: Test MicroPython can execute code after install
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+      - name: Assert micropython can execute a simple script
+        run: |
+          echo "Checking micropython is available..."
+          if ! command -v micropython &>/dev/null; then
+            echo "FAIL: micropython not found in PATH"
+            exit 1
+          fi
+          echo "Running a simple MicroPython script..."
+          OUTPUT=$(micropython -c "print('hello from micropython')" 2>&1)
+          echo "Output: $OUTPUT"
+          if [ "$OUTPUT" != "hello from micropython" ]; then
+            echo "FAIL: expected 'hello from micropython', got: $OUTPUT"
+            exit 1
+          fi
+          echo "PASS: micropython executed code successfully"
+      - name: Assert micropython can do arithmetic
+        run: |
+          RESULT=$(micropython -c "print(2 + 2)" 2>&1)
+          echo "2 + 2 = $RESULT"
+          if [ "$RESULT" != "4" ]; then
+            echo "FAIL: expected '4', got: $RESULT"
+            exit 1
+          fi
+          echo "PASS: arithmetic works correctly"

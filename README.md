@@ -1,15 +1,53 @@
-# BrianPugh/install-micropython
+# install-micropython
 
-Build and install MicroPython
+[![Basic validation](https://github.com/BrianPugh/install-micropython/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/BrianPugh/install-micropython/actions/workflows/test.yaml)
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/BrianPugh/install-micropython](https://github.com/BrianPugh/install-micropython).
+This action provides the following functionality for GitHub Actions users:
 
-## Versions
+* Builds an installs the following executables:
+    * `micropython` - The micropython runtime. Can be used to run unit tests in conjunction with libraries such as micropython's [`unittest`](https://github.com/micropython/micropython-lib/tree/master/python-stdlib/unittest).
+    * `mpy-cross` - The micropython cross-compiler. Used to cross-compile precompiled bytecode for specific microcontroller architectures.
+* Provides a clone of the micropython repository and sets the environment variable `MPY_DIR` to it's path.
+    * Can be used as for artifact building, like [using native machine code in mpy files](https://docs.micropython.org/en/latest/develop/natmod.html#natmod).
+* Builds are automatically cached, speeding up subsequent runs.
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v2.0.0 | [`v2.0.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v2.0.0) | [`65552c0`](https://github.com/BrianPugh/install-micropython/commit/65552c008530b8ee67e628603bb7d8e882e49788) |
-| v2.2.0 | [`v2.2.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v2.2.0) | [`0eab913`](https://github.com/BrianPugh/install-micropython/commit/0eab913c3f99009bd3115f080dac3c4fdcc88260) |
+## Basic Usage
+Simply add the following step to your workflow:
+
+```yaml
+steps:
+  - name: Install MicroPython
+    uses: BrianPugh/install-micropython@v1
+```
+
+## Configuration
+The `install-micropython` action can be configured by setting values under the `with:` key.
+For example:
+
+```yaml
+steps:
+  - uses: BrianPugh/install-micropython@v1
+    with:
+      reference: v1.20.0
+```
+
+Input configuration arguments are described as follows.
+
+#### repository
+The micropython git url to clone from. Defaults to the official micropython repository.
+
+```yaml
+with:
+  repository: https://github.com/micropython/micropython
+```
+
+#### reference
+A git reference (tag, commit, or branch) of the micropython repository to use.
+
+```yaml
+with:
+  reference: v1.20.0
+```
 
 ## Privacy
 
