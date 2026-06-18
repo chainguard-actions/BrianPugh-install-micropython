@@ -1,0 +1,31 @@
+name: Test MicroPython install with specific reference
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          reference: v1.23.0
+      - name: Assert micropython is installed and executable
+        run: |
+          echo "Checking micropython in PATH..."
+          if ! command -v micropython &>/dev/null; then
+            echo "FAIL: micropython not found in PATH"
+            exit 1
+          fi
+          echo "micropython found at: $(command -v micropython)"
+          echo "PASS"
+      - name: Assert micropython runs basic code
+        run: |
+          echo "Running micropython hello world..."
+          OUTPUT=$(micropython -c "print('hello from v1.23.0')")
+          echo "actual: $OUTPUT"
+          if [ "$OUTPUT" != "hello from v1.23.0" ]; then
+            echo "FAIL: expected 'hello from v1.23.0', got '$OUTPUT'"
+            exit 1
+          fi
+          echo "PASS"
