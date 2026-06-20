@@ -1,0 +1,29 @@
+name: Test basic usage - install MicroPython with defaults
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+      - name: Assert micropython is installed and executable
+        run: |
+          echo "Checking micropython is in PATH..."
+          if ! command -v micropython &>/dev/null; then
+            echo "FAIL: micropython not found in PATH"
+            exit 1
+          fi
+          echo "micropython found at: $(command -v micropython)"
+          echo "PASS"
+      - name: Assert micropython runs basic code
+        run: |
+          echo "Running basic micropython code..."
+          OUTPUT=$(micropython -c "print('hello from micropython')" 2>&1)
+          echo "Output: $OUTPUT"
+          if [ "$OUTPUT" != "hello from micropython" ]; then
+            echo "FAIL: unexpected output: $OUTPUT"
+            exit 1
+          fi
+          echo "PASS"

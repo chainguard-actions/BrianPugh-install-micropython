@@ -1,0 +1,31 @@
+name: Test install MicroPython with custom cflags
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          cflags: "-O2"
+      - name: Assert micropython is installed and executable
+        run: |
+          echo "Checking micropython is in PATH after build with custom cflags..."
+          if ! command -v micropython &>/dev/null; then
+            echo "FAIL: micropython not found in PATH"
+            exit 1
+          fi
+          echo "micropython found at: $(command -v micropython)"
+          echo "PASS"
+      - name: Assert micropython runs basic arithmetic
+        run: |
+          echo "Running basic arithmetic in micropython..."
+          OUTPUT=$(micropython -c "print(2 + 2)" 2>&1)
+          echo "Output: $OUTPUT"
+          if [ "$OUTPUT" != "4" ]; then
+            echo "FAIL: expected '4', got '$OUTPUT'"
+            exit 1
+          fi
+          echo "PASS"
