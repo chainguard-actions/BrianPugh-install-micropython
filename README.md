@@ -12,6 +12,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v2.0.0 | [`v2.0.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v2.0.0) | [`65552c0`](https://github.com/BrianPugh/install-micropython/commit/65552c008530b8ee67e628603bb7d8e882e49788) |
 | v2.2.0 | [`v2.2.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v2.2.0) | [`0eab913`](https://github.com/BrianPugh/install-micropython/commit/0eab913c3f99009bd3115f080dac3c4fdcc88260) |
 | v2.4.0 | [`v2.4.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v2.4.0) | [`992ef9d`](https://github.com/BrianPugh/install-micropython/commit/992ef9d4102abb967eb895cdcc09046697d8aab3) |
+| v3.0.0 | [`v3.0.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v3.0.0) | [`2edec0d`](https://github.com/BrianPugh/install-micropython/commit/2edec0d8f8bafb40d0e44dd2fa43098710dc44ca) |
 
 ## Privacy
 
