@@ -1,0 +1,39 @@
+name: Test cflags input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          cflags: "-DMICROPY_DEBUG_VERBOSE=0"
+      - name: Assert cache-hit output is set
+        env:
+          CACHE_HIT: ${{ steps.action.outputs.cache-hit }}
+        run: |
+          echo "cache-hit: $CACHE_HIT"
+          if [ "$CACHE_HIT" != "true" ] && [ "$CACHE_HIT" != "false" ]; then
+            echo "FAIL: expected cache-hit to be 'true' or 'false', got: $CACHE_HIT"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert sha output is set
+        env:
+          SHA: ${{ steps.action.outputs.sha }}
+        run: |
+          echo "sha: $SHA"
+          if [ -z "$SHA" ]; then
+            echo "FAIL: expected sha output to be non-empty"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert micropython binary exists
+        run: |
+          if ! command -v micropython &>/dev/null; then
+            echo "FAIL: micropython binary not found in PATH"
+            exit 1
+          fi
+          echo "PASS: micropython found at $(command -v micropython)"

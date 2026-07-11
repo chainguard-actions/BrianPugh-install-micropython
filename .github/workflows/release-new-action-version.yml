@@ -1,0 +1,72 @@
+name: Release new action version
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      TAG_NAME:
+        description: "Tag name that the major tag will point to"
+        required: true
+
+env:
+  TAG_NAME: ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
+permissions:
+  contents: write
+
+jobs:
+  verify_dist:
+    name: Verify dist/index.js in ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }} is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ env.TAG_NAME }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify dist matches source
+        run: git diff --exit-code dist/
+
+  update_tag:
+    name: Update the major tag to include the ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }} changes
+    needs: verify_dist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
+      - name: Update major version tag
+        env:
+          TAG_NAME: ${{ env.TAG_NAME }}
+        run: |
+          git fetch --tags --force
+
+          # Extract major version (e.g., v2 from v2.3.0)
+          MAJOR_TAG=$(echo "$TAG_NAME" | grep -oE '^v?[0-9]+' | head -1)
+          echo "Updating $MAJOR_TAG to point to $TAG_NAME"
+
+          # Get the commit SHA for the source tag
+          COMMIT_SHA=$(git rev-parse "$TAG_NAME")
+          echo "Source tag $TAG_NAME points to $COMMIT_SHA"
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Delete local major tag if it exists, then create it pointing to the source commit
+          git tag -d "$MAJOR_TAG" 2>/dev/null || true
+          git tag "$MAJOR_TAG" "$COMMIT_SHA"
+          git push origin "$MAJOR_TAG" --force

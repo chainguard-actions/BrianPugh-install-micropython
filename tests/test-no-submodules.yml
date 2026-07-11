@@ -1,0 +1,97 @@
+name: Test MicroPython install without submodules
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            gcc \
+            make \
+            git \
+            python3
+
+      - name: Set up fake MicroPython repository from fixtures
+        run: |
+          set -e
+          FAKE_REPO=/tmp/fake-micropython
+          mkdir -p "$FAKE_REPO/ports/unix"
+          mkdir -p "$FAKE_REPO/mpy-cross"
+
+          # Copy committed fixture Makefiles (have correct tabs and targets)
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-micropython/ports/unix/Makefile" \
+             "$FAKE_REPO/ports/unix/Makefile"
+          cp "$GITHUB_WORKSPACE/tests/fixtures/fake-micropython/mpy-cross/Makefile" \
+             "$FAKE_REPO/mpy-cross/Makefile"
+
+          # Initialize git repo with a tag
+          cd "$FAKE_REPO"
+          git init
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+          git add .
+          git commit -m "Initial commit"
+          git tag v1.0.0
+
+      - id: install
+        uses: .
+        with:
+          repository: /tmp/fake-micropython
+          reference: v1.0.0
+          submodules: "false"
+
+      - name: Assert sha output is set
+        env:
+          ACTUAL: ${{ steps.install.outputs.sha }}
+        run: |
+          echo "sha: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: expected sha output to be non-empty"
+            exit 1
+          fi
+          if ! echo "$ACTUAL" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "FAIL: sha does not look like a git SHA: $ACTUAL"
+            exit 1
+          fi
+          echo "PASS: sha=$ACTUAL"
+
+      - name: Assert cache-hit output is set
+        env:
+          ACTUAL: ${{ steps.install.outputs.cache-hit }}
+        run: |
+          echo "cache-hit: $ACTUAL"
+          if [ "$ACTUAL" != "true" ] && [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected cache-hit to be 'true' or 'false', got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: cache-hit=$ACTUAL"
+
+      - name: Assert micropython binary is available
+        run: |
+          which micropython || (echo "FAIL: micropython not found in PATH" && exit 1)
+          micropython
+          echo "PASS: micropython is available without submodules"
+
+      - name: Assert mpy-cross binary is available
+        run: |
+          which mpy-cross || (echo "FAIL: mpy-cross not found in PATH" && exit 1)
+          mpy-cross
+          echo "PASS: mpy-cross is available"
+
+      - name: Assert MPY_DIR is set
+        run: |
+          echo "MPY_DIR: $MPY_DIR"
+          if [ -z "$MPY_DIR" ]; then
+            echo "FAIL: MPY_DIR environment variable not set"
+            exit 1
+          fi
+          if [ ! -d "$MPY_DIR" ]; then
+            echo "FAIL: MPY_DIR directory does not exist: $MPY_DIR"
+            exit 1
+          fi
+          echo "PASS: MPY_DIR=$MPY_DIR"

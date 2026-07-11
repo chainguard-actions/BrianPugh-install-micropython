@@ -1,0 +1,41 @@
+{
+  "name": "build-and-install-micropython-unix-port",
+  "version": "3.0.0",
+  "type": "module",
+  "description": "A GitHub Action to clone, build, and install the Unix port of MicroPython",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "eslint .",
+    "lint": "eslint .",
+    "build": "ncc build index.js -o dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BrianPugh/install-micropython.git"
+  },
+  "keywords": [
+    "github-actions",
+    "micropython",
+    "unix-port",
+    "build",
+    "install",
+    "mpy-cross"
+  ],
+  "author": "Brian Pugh <bnp117@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/BrianPugh/install-micropython/issues"
+  },
+  "homepage": "https://github.com/BrianPugh/install-micropython",
+  "dependencies": {
+    "@actions/cache": "^6.1.0",
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/io": "^3.0.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@vercel/ncc": "^0.44.1",
+    "eslint": "^9.0.0"
+  }
+}
