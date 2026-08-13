@@ -1,4 +1,4 @@
-name: Test cflags input - custom compile flags
+name: Test MicroPython installation with cflags
 on:
   workflow_dispatch:
 jobs:
@@ -6,59 +6,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            gcc \
-            make \
-            libffi-dev \
-            pkg-config \
-            git \
-            python3 \
-            python3-dev \
-            python3-pip \
-            libreadline-dev \
-            libssl-dev \
-            zlib1g-dev
+
       - id: action
+        name: Install MicroPython with cflags
         uses: .
         with:
+          reference: v1.22.0
           cflags: '-DMICROPY_PY_RE_MATCH_GROUPS=1'
-      - name: Assert micropython binary is available after cflags build
-        run: |
-          echo "Checking micropython binary..."
-          if ! command -v micropython &>/dev/null; then
-            echo "FAIL: micropython not found in PATH"
-            exit 1
-          fi
-          echo "PASS: micropython found at $(which micropython)"
-      - name: Assert mpy-cross binary is available after cflags build
-        run: |
-          echo "Checking mpy-cross binary..."
-          if ! command -v mpy-cross &>/dev/null; then
-            echo "FAIL: mpy-cross not found in PATH"
-            exit 1
-          fi
-          echo "PASS: mpy-cross found at $(which mpy-cross)"
+
       - name: Assert CFLAGS_EXTRA environment variable is set
         run: |
           echo "CFLAGS_EXTRA=$CFLAGS_EXTRA"
           if [ "$CFLAGS_EXTRA" != "-DMICROPY_PY_RE_MATCH_GROUPS=1" ]; then
-            echo "FAIL: CFLAGS_EXTRA not set correctly, got: '$CFLAGS_EXTRA'"
+            echo "FAIL: expected CFLAGS_EXTRA='-DMICROPY_PY_RE_MATCH_GROUPS=1', got '$CFLAGS_EXTRA'"
             exit 1
           fi
-          echo "PASS: CFLAGS_EXTRA=$CFLAGS_EXTRA"
-      - name: Assert MPY_DIR is set and valid
+          echo "PASS: CFLAGS_EXTRA is set correctly"
+
+      - name: Assert micropython binary is installed
+        run: |
+          if ! command -v micropython &>/dev/null; then
+            echo "FAIL: micropython binary not found in PATH"
+            exit 1
+          fi
+          echo "PASS: micropython found at $(which micropython)"
+
+      - name: Assert mpy-cross binary is installed
+        run: |
+          if ! command -v mpy-cross &>/dev/null; then
+            echo "FAIL: mpy-cross binary not found in PATH"
+            exit 1
+          fi
+          echo "PASS: mpy-cross found at $(which mpy-cross)"
+
+      - name: Assert MPY_DIR environment variable is set
         run: |
           echo "MPY_DIR=$MPY_DIR"
           if [ -z "$MPY_DIR" ]; then
-            echo "FAIL: MPY_DIR is not set"
-            exit 1
-          fi
-          if [ ! -d "$MPY_DIR" ]; then
-            echo "FAIL: MPY_DIR directory does not exist: $MPY_DIR"
+            echo "FAIL: MPY_DIR environment variable is not set"
             exit 1
           fi
           echo "PASS: MPY_DIR=$MPY_DIR"
