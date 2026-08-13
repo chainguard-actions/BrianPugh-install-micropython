@@ -1,4 +1,4 @@
-name: Test basic usage - install MicroPython with defaults
+name: Test basic MicroPython install
 on:
   workflow_dispatch:
 jobs:
@@ -8,22 +8,44 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - id: action
         uses: .
-      - name: Assert micropython is installed and executable
+        with:
+          reference: v1.20.0
+
+      - name: Assert micropython binary is installed
         run: |
-          echo "Checking micropython is in PATH..."
           if ! command -v micropython &>/dev/null; then
-            echo "FAIL: micropython not found in PATH"
+            echo "FAIL: micropython binary not found in PATH"
             exit 1
           fi
-          echo "micropython found at: $(command -v micropython)"
-          echo "PASS"
-      - name: Assert micropython runs basic code
+          echo "PASS: micropython found at $(which micropython)"
+
+      - name: Assert mpy-cross binary is installed
         run: |
-          echo "Running basic micropython code..."
-          OUTPUT=$(micropython -c "print('hello from micropython')" 2>&1)
-          echo "Output: $OUTPUT"
+          if ! command -v mpy-cross &>/dev/null; then
+            echo "FAIL: mpy-cross binary not found in PATH"
+            exit 1
+          fi
+          echo "PASS: mpy-cross found at $(which mpy-cross)"
+
+      - name: Assert MPY_DIR environment variable is set
+        run: |
+          echo "MPY_DIR=$MPY_DIR"
+          if [ -z "$MPY_DIR" ]; then
+            echo "FAIL: MPY_DIR environment variable is not set"
+            exit 1
+          fi
+          if [ ! -d "$MPY_DIR" ]; then
+            echo "FAIL: MPY_DIR directory does not exist: $MPY_DIR"
+            exit 1
+          fi
+          echo "PASS: MPY_DIR=$MPY_DIR"
+
+      - name: Assert micropython runs correctly
+        run: |
+          OUTPUT=$(micropython -c "print('hello from micropython')")
+          echo "output: $OUTPUT"
           if [ "$OUTPUT" != "hello from micropython" ]; then
-            echo "FAIL: unexpected output: $OUTPUT"
+            echo "FAIL: unexpected output from micropython"
             exit 1
           fi
           echo "PASS"

@@ -1,0 +1,46 @@
+name: Release new action version
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      TAG_NAME:
+        description: "Tag name that the major tag will point to"
+        required: true
+
+env:
+  TAG_NAME: ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
+permissions:
+  contents: write
+
+jobs:
+  update_tag:
+    name: Update the major tag to include the ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }} changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Update major version tag
+        run: |
+          git fetch --tags --force
+
+          # Extract major version (e.g., v2 from v2.3.0)
+          MAJOR_TAG=$(echo "$TAG_NAME" | grep -oE '^v?[0-9]+' | head -1)
+          echo "Updating $MAJOR_TAG to point to $TAG_NAME"
+
+          # Get the commit SHA for the source tag
+          COMMIT_SHA=$(git rev-parse "$TAG_NAME")
+          echo "Source tag $TAG_NAME points to $COMMIT_SHA"
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Delete local major tag if it exists, then create it pointing to the source commit
+          git tag -d "$MAJOR_TAG" 2>/dev/null || true
+          git tag "$MAJOR_TAG" "$COMMIT_SHA"
+          git push origin "$MAJOR_TAG" --force

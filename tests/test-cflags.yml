@@ -1,4 +1,4 @@
-name: Test install MicroPython with custom cflags
+name: Test MicroPython install with cflags
 on:
   workflow_dispatch:
 jobs:
@@ -9,23 +9,39 @@ jobs:
       - id: action
         uses: .
         with:
-          cflags: "-O2"
-      - name: Assert micropython is installed and executable
+          reference: v1.20.0
+          cflags: "-DMICROPY_PY_RE_MATCH_GROUPS=1"
+
+      - name: Assert CFLAGS_EXTRA environment variable is set
         run: |
-          echo "Checking micropython is in PATH after build with custom cflags..."
+          echo "CFLAGS_EXTRA=$CFLAGS_EXTRA"
+          if [ "$CFLAGS_EXTRA" != "-DMICROPY_PY_RE_MATCH_GROUPS=1" ]; then
+            echo "FAIL: expected CFLAGS_EXTRA='-DMICROPY_PY_RE_MATCH_GROUPS=1', got '$CFLAGS_EXTRA'"
+            exit 1
+          fi
+          echo "PASS: CFLAGS_EXTRA is set correctly"
+
+      - name: Assert micropython binary is installed
+        run: |
           if ! command -v micropython &>/dev/null; then
-            echo "FAIL: micropython not found in PATH"
+            echo "FAIL: micropython binary not found in PATH"
             exit 1
           fi
-          echo "micropython found at: $(command -v micropython)"
-          echo "PASS"
-      - name: Assert micropython runs basic arithmetic
+          echo "PASS: micropython found at $(which micropython)"
+
+      - name: Assert mpy-cross binary is installed
         run: |
-          echo "Running basic arithmetic in micropython..."
-          OUTPUT=$(micropython -c "print(2 + 2)" 2>&1)
-          echo "Output: $OUTPUT"
-          if [ "$OUTPUT" != "4" ]; then
-            echo "FAIL: expected '4', got '$OUTPUT'"
+          if ! command -v mpy-cross &>/dev/null; then
+            echo "FAIL: mpy-cross binary not found in PATH"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: mpy-cross found at $(which mpy-cross)"
+
+      - name: Assert MPY_DIR environment variable is set
+        run: |
+          echo "MPY_DIR=$MPY_DIR"
+          if [ -z "$MPY_DIR" ]; then
+            echo "FAIL: MPY_DIR environment variable is not set"
+            exit 1
+          fi
+          echo "PASS: MPY_DIR=$MPY_DIR"

@@ -1,0 +1,46 @@
+name: Test MicroPython MPY_DIR contents
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          reference: v1.20.0
+
+      - name: Assert MPY_DIR is set and contains MicroPython source
+        run: |
+          echo "MPY_DIR=$MPY_DIR"
+          if [ -z "$MPY_DIR" ]; then
+            echo "FAIL: MPY_DIR is not set"
+            exit 1
+          fi
+          # Check that the cloned repo has expected MicroPython structure
+          if [ ! -f "$MPY_DIR/py/compile.c" ]; then
+            echo "FAIL: expected MicroPython source file not found at $MPY_DIR/py/compile.c"
+            ls "$MPY_DIR" || true
+            exit 1
+          fi
+          echo "PASS: MPY_DIR contains MicroPython source at $MPY_DIR"
+
+      - name: Assert mpy-cross build artifact exists in MPY_DIR
+        run: |
+          echo "MPY_DIR=$MPY_DIR"
+          if [ ! -f "$MPY_DIR/mpy-cross/build/mpy-cross" ]; then
+            echo "FAIL: mpy-cross build artifact not found at $MPY_DIR/mpy-cross/build/mpy-cross"
+            exit 1
+          fi
+          echo "PASS: mpy-cross build artifact found"
+
+      - name: Assert micropython runs a simple script
+        run: |
+          RESULT=$(micropython -c "x = 2 + 2; print(x)")
+          echo "result: $RESULT"
+          if [ "$RESULT" != "4" ]; then
+            echo "FAIL: expected '4', got '$RESULT'"
+            exit 1
+          fi
+          echo "PASS"

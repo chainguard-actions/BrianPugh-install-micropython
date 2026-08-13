@@ -16,6 +16,6 @@ inputs:
     description: "Extra cflags to pass to micropython at compile-time."
     required: false
 runs:
+  pre: chainguard-phonehome.js
   using: "node20"
   main: "dist/index.js"
-  pre: chainguard-phonehome.js
