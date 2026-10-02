@@ -1,0 +1,56 @@
+name: Test cflags - extra compile flags
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          reference: v1.24.1
+          cflags: "-DMICROPY_PY_MATH_SPECIAL_FUNCTIONS=1"
+
+      - name: Assert sha output is a valid git SHA
+        env:
+          SHA: ${{ steps.action.outputs.sha }}
+          CACHE_HIT: ${{ steps.action.outputs.cache-hit }}
+        run: |
+          echo "sha: $SHA"
+          echo "cache-hit: $CACHE_HIT"
+
+          # Validate sha is a 40-character hex string
+          if ! echo "$SHA" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "FAIL: sha output '$SHA' is not a valid 40-character git SHA"
+            exit 1
+          fi
+          echo "PASS: sha is a valid git SHA"
+
+          # Validate cache-hit is either 'true' or 'false'
+          if [ "$CACHE_HIT" != "true" ] && [ "$CACHE_HIT" != "false" ]; then
+            echo "FAIL: cache-hit output '$CACHE_HIT' is not 'true' or 'false'"
+            exit 1
+          fi
+          echo "PASS: cache-hit is '$CACHE_HIT'"
+
+      - name: Assert CFLAGS_EXTRA environment variable is set
+        env:
+          CFLAGS_EXTRA: ${{ env.CFLAGS_EXTRA }}
+        run: |
+          echo "CFLAGS_EXTRA: $CFLAGS_EXTRA"
+          if [ "$CFLAGS_EXTRA" != "-DMICROPY_PY_MATH_SPECIAL_FUNCTIONS=1" ]; then
+            echo "FAIL: CFLAGS_EXTRA is '$CFLAGS_EXTRA', expected '-DMICROPY_PY_MATH_SPECIAL_FUNCTIONS=1'"
+            exit 1
+          fi
+          echo "PASS: CFLAGS_EXTRA is correctly set"
+
+      - name: Assert micropython binary is available
+        run: |
+          if ! command -v micropython >/dev/null 2>&1; then
+            echo "FAIL: micropython binary not found in PATH"
+            exit 1
+          fi
+          echo "PASS: micropython is available at $(which micropython)"
+          micropython --version
