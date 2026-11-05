@@ -1,0 +1,57 @@
+name: Test install from tag reference
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install build prerequisites
+        run: |
+          SUDO=""
+          if [ "$(id -u)" != "0" ] && command -v sudo >/dev/null; then SUDO=sudo; fi
+          $SUDO apt-get update -y || true
+          $SUDO apt-get install -y build-essential git python3 pkg-config libffi-dev || true
+      - id: action
+        uses: .
+        with:
+          reference: v1.24.1
+      - name: Assert sha output
+        env:
+          SHA: ${{ steps.action.outputs.sha }}
+          CACHE_HIT: ${{ steps.action.outputs.cache-hit }}
+        run: |
+          echo "sha: $SHA"
+          echo "cache-hit: $CACHE_HIT"
+          if ! echo "$SHA" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "FAIL: sha is not a 40-char hex SHA"
+            exit 1
+          fi
+          if [ "$CACHE_HIT" != "true" ] && [ "$CACHE_HIT" != "false" ]; then
+            echo "FAIL: cache-hit should be true/false"
+            exit 1
+          fi
+          EXPECTED="$(git ls-remote --tags https://github.com/micropython/micropython 'refs/tags/v1.24.1^{}' | cut -f1)"
+          echo "expected: $EXPECTED"
+          if [ -n "$EXPECTED" ] && [ "$SHA" != "$EXPECTED" ]; then
+            echo "FAIL: sha does not match v1.24.1 commit"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert MPY_DIR and binaries
+        run: |
+          echo "MPY_DIR=$MPY_DIR"
+          if [ -z "$MPY_DIR" ] || [ ! -d "$MPY_DIR/ports/unix" ]; then
+            echo "FAIL: MPY_DIR not set or not a micropython checkout"
+            exit 1
+          fi
+          OUT="$(micropython -c 'import sys; print(sys.implementation.name, sys.version)')"
+          echo "micropython: $OUT"
+          echo "$OUT" | grep -q '^micropython' || { echo "FAIL: micropython did not run"; exit 1; }
+          echo "$OUT" | grep -q '1.24.1' || { echo "FAIL: unexpected version"; exit 1; }
+          mpy-cross --version
+          echo 'print("hi")' > /tmp/t.py
+          mpy-cross /tmp/t.py
+          [ -f /tmp/t.mpy ] || { echo "FAIL: mpy-cross produced no .mpy"; exit 1; }
+          micropython -c 'import sys; sys.path.insert(0, "/tmp"); import t' | grep -q '^hi$' || { echo "FAIL: .mpy did not run"; exit 1; }
+          echo "PASS"

@@ -1,0 +1,38 @@
+name: Test cflags input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install build prerequisites
+        run: |
+          SUDO=""
+          if [ "$(id -u)" != "0" ] && command -v sudo >/dev/null; then SUDO=sudo; fi
+          $SUDO apt-get update -y || true
+          $SUDO apt-get install -y build-essential git python3 pkg-config libffi-dev || true
+      - id: action
+        uses: .
+        with:
+          reference: v1.24.1
+          cflags: "-DACT_TEST_FLAG=1"
+          submodules: "false"
+      - name: Assert CFLAGS_EXTRA exported and build works
+        env:
+          SHA: ${{ steps.action.outputs.sha }}
+        run: |
+          echo "CFLAGS_EXTRA=$CFLAGS_EXTRA"
+          echo "sha: $SHA"
+          if [ "$CFLAGS_EXTRA" != "-DACT_TEST_FLAG=1" ]; then
+            echo "FAIL: CFLAGS_EXTRA not exported as expected"
+            exit 1
+          fi
+          if ! echo "$SHA" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "FAIL: invalid sha"
+            exit 1
+          fi
+          OUT="$(micropython -c 'print(1+1)')"
+          echo "micropython: $OUT"
+          [ "$OUT" = "2" ] || { echo "FAIL: micropython output wrong"; exit 1; }
+          echo "PASS"

@@ -1,0 +1,40 @@
+name: Test install from commit SHA reference
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install build prerequisites
+        run: |
+          SUDO=""
+          if [ "$(id -u)" != "0" ] && command -v sudo >/dev/null; then SUDO=sudo; fi
+          $SUDO apt-get update -y || true
+          $SUDO apt-get install -y build-essential git python3 pkg-config libffi-dev || true
+      - name: Resolve commit SHA of v1.24.1
+        id: resolve
+        run: |
+          SHA="$(git ls-remote --tags https://github.com/micropython/micropython 'refs/tags/v1.24.1^{}' | cut -f1)"
+          echo "resolved: $SHA"
+          [ -n "$SHA" ] || { echo "FAIL: could not resolve tag commit"; exit 1; }
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+      - id: action
+        uses: .
+        with:
+          reference: ${{ steps.resolve.outputs.sha }}
+      - name: Assert sha output matches requested commit
+        env:
+          ACTUAL: ${{ steps.action.outputs.sha }}
+          EXPECTED: ${{ steps.resolve.outputs.sha }}
+        run: |
+          echo "actual: $ACTUAL"
+          echo "expected: $EXPECTED"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: sha mismatch"
+            exit 1
+          fi
+          HEAD="$(git -C "$MPY_DIR" rev-parse HEAD)"
+          [ "$HEAD" = "$EXPECTED" ] || { echo "FAIL: MPY_DIR HEAD mismatch ($HEAD)"; exit 1; }
+          micropython -c 'import sys; print(sys.version)' | grep -q '1.24.1' || { echo "FAIL: wrong micropython version"; exit 1; }
+          echo "PASS"
