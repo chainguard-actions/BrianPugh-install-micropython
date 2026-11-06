@@ -15,6 +15,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v3.0.0 | [`v3.0.0`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v3.0.0) | [`2edec0d`](https://github.com/BrianPugh/install-micropython/commit/2edec0d8f8bafb40d0e44dd2fa43098710dc44ca) | [`HARDENING.md`](https://github.com/chainguard-actions/BrianPugh-install-micropython/blob/v3.0.0/HARDENING.md) |
 | v3.0.1 | [`v3.0.1`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v3.0.1) | [`1cff1a1`](https://github.com/BrianPugh/install-micropython/commit/1cff1a1414a4c20b2ff34b09bdfdae02225c7bd1) | [`HARDENING.md`](https://github.com/chainguard-actions/BrianPugh-install-micropython/blob/v3.0.1/HARDENING.md) |
 | v3.0.2 | [`v3.0.2`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v3.0.2) | [`47135c6`](https://github.com/BrianPugh/install-micropython/commit/47135c6c323bd089a054150d13f30c00fc037c92) | [`HARDENING.md`](https://github.com/chainguard-actions/BrianPugh-install-micropython/blob/v3.0.2/HARDENING.md) |
+| v3.0.3 | [`v3.0.3`](https://github.com/chainguard-actions/BrianPugh-install-micropython/tree/v3.0.3) | [`8e9e471`](https://github.com/BrianPugh/install-micropython/commit/8e9e4719a13e22c076619103c623cc7270bc4217) | [`HARDENING.md`](https://github.com/chainguard-actions/BrianPugh-install-micropython/blob/v3.0.3/HARDENING.md) |
 
 ## Privacy
 
