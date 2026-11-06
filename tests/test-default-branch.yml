@@ -1,0 +1,53 @@
+name: Test default branch
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+      - name: Assert sha output is a commit sha
+        env:
+          ACTUAL: ${{ steps.action.outputs.sha }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "FAIL: sha is not a 40-char hex"
+            exit 1
+          fi
+          if [ "$(git -C "$MPY_DIR" rev-parse HEAD)" != "$ACTUAL" ]; then
+            echo "FAIL: MPY_DIR HEAD does not match sha output"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert shallow clone
+        run: |
+          COUNT="$(git -C "$MPY_DIR" rev-list --count HEAD)"
+          echo "commit count: $COUNT"
+          if [ "$COUNT" != "1" ]; then
+            echo "FAIL: expected a shallow (depth 1) clone"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert cache-hit is boolean
+        env:
+          ACTUAL: ${{ steps.action.outputs.cache-hit }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "true" ] && [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected true/false"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert micropython runs
+        run: |
+          OUT="$(micropython -c 'print(1 + 2)')"
+          echo "output: $OUT"
+          if [ "$OUT" != "3" ]; then
+            echo "FAIL: unexpected output"
+            exit 1
+          fi
+          mpy-cross --version
+          echo "PASS"

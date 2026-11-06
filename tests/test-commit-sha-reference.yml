@@ -1,0 +1,60 @@
+name: Test commit sha reference
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Resolve commit sha of v1.24.1
+        id: resolve
+        run: |
+          SHA="$(git ls-remote https://github.com/micropython/micropython 'refs/tags/v1.24.1^{}' | cut -f1)"
+          echo "sha: $SHA"
+          if [ -z "$SHA" ]; then
+            echo "FAIL: could not resolve sha"
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+      - id: action
+        uses: .
+        with:
+          reference: ${{ steps.resolve.outputs.sha }}
+          submodules: "false"
+      - name: Assert sha output equals requested commit
+        env:
+          ACTUAL: ${{ steps.action.outputs.sha }}
+          EXPECTED: ${{ steps.resolve.outputs.sha }}
+        run: |
+          echo "actual: $ACTUAL"
+          echo "expected: $EXPECTED"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: sha mismatch"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert full clone with tag history
+        run: |
+          COUNT="$(git -C "$MPY_DIR" rev-list --count HEAD)"
+          echo "commit count: $COUNT"
+          if [ "$COUNT" -le 1 ]; then
+            echo "FAIL: expected full clone history"
+            exit 1
+          fi
+          DESC="$(git -C "$MPY_DIR" describe --tags)"
+          echo "describe: $DESC"
+          if [ "$DESC" != "v1.24.1" ]; then
+            echo "FAIL: expected git describe to be v1.24.1"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert binaries functional
+        run: |
+          OUT="$(micropython -c 'import sys; print(sys.version)')"
+          echo "output: $OUT"
+          case "$OUT" in
+            *1.24.1*) ;;
+            *) echo "FAIL: unexpected version"; exit 1 ;;
+          esac
+          mpy-cross --version
+          echo "PASS"

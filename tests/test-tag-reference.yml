@@ -1,0 +1,74 @@
+name: Test tag reference
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          reference: v1.24.1
+      - name: Assert sha matches tag commit
+        env:
+          ACTUAL: ${{ steps.action.outputs.sha }}
+        run: |
+          echo "actual: $ACTUAL"
+          EXPECTED="$(git ls-remote https://github.com/micropython/micropython 'refs/tags/v1.24.1^{}' | cut -f1)"
+          if [ -z "$EXPECTED" ]; then
+            EXPECTED="$(git ls-remote https://github.com/micropython/micropython 'refs/tags/v1.24.1' | cut -f1)"
+          fi
+          echo "expected: $EXPECTED"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: sha mismatch"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert cache-hit is boolean
+        env:
+          ACTUAL: ${{ steps.action.outputs.cache-hit }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "true" ] && [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected true/false"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert MPY_DIR exported and checked out at sha
+        env:
+          SHA: ${{ steps.action.outputs.sha }}
+        run: |
+          echo "MPY_DIR: $MPY_DIR"
+          if [ -z "$MPY_DIR" ] || [ ! -d "$MPY_DIR/py" ]; then
+            echo "FAIL: MPY_DIR not set or not a micropython tree"
+            exit 1
+          fi
+          HEAD_SHA="$(git -C "$MPY_DIR" rev-parse HEAD)"
+          if [ "$HEAD_SHA" != "$SHA" ]; then
+            echo "FAIL: MPY_DIR HEAD $HEAD_SHA != $SHA"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert binaries installed and functional
+        run: |
+          ls -l /usr/local/bin/micropython /usr/local/bin/mpy-cross
+          OUT="$(micropython -c 'import sys; print(sys.implementation.name, sys.version)')"
+          echo "micropython output: $OUT"
+          case "$OUT" in
+            micropython*1.24.1*) ;;
+            *) echo "FAIL: unexpected micropython output"; exit 1 ;;
+          esac
+          VER="$(mpy-cross --version)"
+          echo "mpy-cross version: $VER"
+          case "$VER" in
+            *1.24.1*) ;;
+            *) echo "FAIL: unexpected mpy-cross version"; exit 1 ;;
+          esac
+          echo 'print("hello")' > /tmp/hello.py
+          mpy-cross /tmp/hello.py
+          if [ ! -f /tmp/hello.mpy ]; then
+            echo "FAIL: mpy-cross did not produce hello.mpy"
+            exit 1
+          fi
+          echo "PASS"

@@ -1,0 +1,40 @@
+name: Test cflags
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          reference: v1.24.1
+          cflags: "-DMICROPY_PY_RE_MATCH_GROUPS=1"
+      - name: Assert CFLAGS_EXTRA exported
+        run: |
+          echo "CFLAGS_EXTRA: $CFLAGS_EXTRA"
+          if [ "$CFLAGS_EXTRA" != "-DMICROPY_PY_RE_MATCH_GROUPS=1" ]; then
+            echo "FAIL: CFLAGS_EXTRA not exported correctly"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert sha output non-empty
+        env:
+          ACTUAL: ${{ steps.action.outputs.sha }}
+        run: |
+          echo "actual: $ACTUAL"
+          if ! echo "$ACTUAL" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "FAIL: sha is not a 40-char hex"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert feature enabled by cflags works
+        run: |
+          OUT="$(micropython -c 'import re; print(re.match("(a)(b)", "ab").groups())')"
+          echo "output: $OUT"
+          if [ "$OUT" != "('a', 'b')" ]; then
+            echo "FAIL: re match groups not enabled"
+            exit 1
+          fi
+          echo "PASS"
